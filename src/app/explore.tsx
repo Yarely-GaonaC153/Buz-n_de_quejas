@@ -1,180 +1,114 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAppData } from '@/context/app-data';
+import { supabase } from '@/lib/supabase';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+const actions = [
+  { icon: '✎', title: 'Reportar', subtitle: 'una queja o denuncia' },
+  { icon: '♧', title: 'Proponer', subtitle: 'un proyecto' },
+  { icon: '▤', title: 'Mis reportes', subtitle: '' },
+  { icon: '◒', title: 'Proyectos en', subtitle: 'mi comunidad' },
+];
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-  };
-  const theme = useTheme();
-
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+export default function ExploreScreen() {
+  const router = useRouter();
+  const { reports } = useAppData();
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
-
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.menu}>☰</Text>
+          <Text style={styles.headerTitle}>CiudadEnAcción</Text>
+          <View style={styles.profileCircle}><Text style={styles.profileIcon}>●</Text></View>
+        </View>
+        <View style={styles.intro}>
+          <Text style={styles.welcome}>Hola, Bienvenido</Text>
+          <Text style={styles.description}>Juntos mejoramos nuestra comunidad.</Text>
+          {!supabase && <Text style={styles.connectionWarning}>Modo local: configura Supabase para enviar reportes a presidencia.</Text>}
+        </View>
+        <View style={styles.actionsGrid}>
+          {actions.map((action, index) => (
+            <Pressable
+              key={action.title}
+              onPress={() => router.push(['/report', '/assistant', '/my-report', '/projects'][index] as never)}
+              style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}>
+              <Text style={styles.actionIcon}>{action.icon}</Text>
+              <Text style={styles.actionTitle}>{action.title}</Text>
+              {!!action.subtitle && <Text style={styles.actionSubtitle}>{action.subtitle}</Text>}
             </Pressable>
-          </ExternalLink>
-        </ThemedView>
+          ))}
+        </View>
+        <View style={styles.sectionHeading}>
+          <Text style={styles.sectionTitle}>Reportes recientes</Text>
+          <Pressable onPress={() => router.push('/agency')}><Text style={styles.seeAll}>Ver todos ›</Text></Pressable>
+        </View>
+          <Pressable style={styles.reportList} onPress={() => reports[0] && router.push('/my-report')}>
+          {reports.length === 0 ? <Text style={styles.empty}>Aún no tienes reportes. Crea el primero desde Reportar.</Text> : reports.slice(0, 3).map((report) => <ReportRow key={report.id} title={report.title} location={report.address} status={report.status} date={report.createdAt} color="#59626d" />)}
+          </Pressable>
+      </ScrollView>
+      <View style={styles.bottomBar}>
+        <View style={styles.bottomItem}><Text style={styles.bottomIconActive}>⌂</Text><Text style={styles.bottomLabelActive}>Inicio</Text></View>
+        <Pressable style={styles.addButton} onPress={() => router.push('/report')}><Text style={styles.addLabel}>+</Text></Pressable>
+        <Pressable style={styles.bottomItem} onPress={() => router.push('/notifications')}><Text style={styles.bottomIcon}>♧</Text><Text style={styles.bottomLabel}>Notificaciones</Text></Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
 
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+function ReportRow({ title, location, status, date, color }: { title: string; location: string; status: string; date: string; color: string }) {
+  return (
+    <View style={styles.reportRow}>
+      <View style={[styles.reportImage, { backgroundColor: color }]}><Text style={styles.imageSymbol}>•</Text></View>
+      <View style={styles.reportInfo}>
+        <Text style={styles.reportTitle}>{title}</Text>
+        <Text style={styles.reportLocation}>{location}</Text>
+        <View style={[styles.status, { backgroundColor: status === 'Asignado' ? '#c9def7' : '#ccefd2' }]}><Text style={styles.statusText}>{status}</Text></View>
+      </View>
+      <Text style={styles.reportDate}>{date}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
-  },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    justifyContent: 'center',
-    gap: Spacing.one,
-    alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  safeArea: { flex: 1, backgroundColor: '#fbfcfe' },
+  content: { paddingBottom: 92 },
+  header: { height: 60, backgroundColor: '#1c2d50', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 17 },
+  menu: { color: '#fff', fontSize: 23, width: 42 },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  profileCircle: { borderColor: '#fff', borderWidth: 2, borderRadius: 15, height: 25, width: 25, alignItems: 'center', justifyContent: 'flex-end' },
+  profileIcon: { color: '#fff', fontSize: 14, lineHeight: 17 },
+  intro: { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 20 },
+  welcome: { color: '#0d0d0f', fontSize: 22, fontWeight: '800' },
+  description: { color: '#222', fontSize: 15, marginTop: 5 },
+  connectionWarning: { color: '#8a5a12', backgroundColor: '#fff4d8', borderRadius: 8, fontSize: 12, marginTop: 12, padding: 9 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 15 },
+  actionCard: { width: '47.8%', minHeight: 100, borderColor: '#dfe3e9', borderWidth: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', shadowColor: '#8090a5', shadowOpacity: 0.11, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  pressed: { opacity: 0.7 },
+  actionIcon: { color: '#1d2a4b', fontSize: 32, lineHeight: 36, marginBottom: 5 },
+  actionTitle: { color: '#161719', fontSize: 14, fontWeight: '800' },
+  actionSubtitle: { color: '#1c1c1d', fontSize: 12, fontWeight: '600' },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 10 },
+  sectionTitle: { color: '#18191b', fontSize: 16, fontWeight: '800' },
+  seeAll: { color: '#40577f', fontSize: 12, fontWeight: '700' },
+  reportList: { marginHorizontal: 15, borderColor: '#e0e4e9', borderWidth: 1, borderRadius: 11, overflow: 'hidden', backgroundColor: '#fff' },
+  empty: { color: '#687383', fontSize: 13, padding: 22, textAlign: 'center' },
+  reportRow: { minHeight: 99, borderBottomColor: '#edf0f4', borderBottomWidth: 1, flexDirection: 'row', alignItems: 'center', padding: 9 },
+  reportImage: { width: 77, height: 76, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  imageSymbol: { color: 'rgba(255,255,255,.35)', fontSize: 48 },
+  reportInfo: { flex: 1, paddingLeft: 10 },
+  reportTitle: { color: '#1a1b1d', fontSize: 13, fontWeight: '800' },
+  reportLocation: { color: '#687383', fontSize: 11, marginTop: 4 },
+  status: { alignSelf: 'flex-start', borderRadius: 12, marginTop: 7, paddingHorizontal: 10, paddingVertical: 4 },
+  statusText: { color: '#24362a', fontSize: 10, fontWeight: '700' },
+  reportDate: { alignSelf: 'flex-end', color: '#637086', fontSize: 10, paddingBottom: 7 },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 69, borderTopColor: '#e1e5ea', borderTopWidth: 1, backgroundColor: 'rgba(255,255,255,.97)', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  bottomItem: { alignItems: 'center', width: 85 },
+  bottomIconActive: { color: '#243b75', fontSize: 27, lineHeight: 28 },
+  bottomIcon: { color: '#7d899d', fontSize: 25, lineHeight: 28 },
+  bottomLabelActive: { color: '#243b75', fontSize: 10, fontWeight: '700' },
+  bottomLabel: { color: '#7d899d', fontSize: 10 },
+  addButton: { backgroundColor: '#243b75', height: 48, width: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginTop: -25, shadowColor: '#243b75', shadowOpacity: 0.25, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
+  addLabel: { color: '#fff', fontSize: 30, fontWeight: '300', lineHeight: 32 },
 });

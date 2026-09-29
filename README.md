@@ -1,8 +1,10 @@
-# Welcome to your Expo app 👋
+# CiudadEnAcción
+
+Aplicación ciudadana para reportar problemáticas con ubicación y evidencia fotográfica, generar una propuesta asistida por IA y enviarla al departamento correspondiente.
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+## Instalación
 
 1. Install dependencies
 
@@ -10,11 +12,22 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Crea un proyecto en [Supabase](https://supabase.com) y ejecuta el contenido de `supabase/schema.sql` desde el SQL Editor.
+
+3. Copia `.env.example` como `.env` y completa:
+
+   ```env
+   EXPO_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+   ```
+
+4. Inicia la app:
 
    ```bash
    npx expo start
    ```
+
+Sin las variables de Supabase, la app usa almacenamiento local para pruebas. Con ellas, las fotos se guardan en Storage y los reportes en la tabla `reports`.
 
 In the output, you'll find options to open the app in a
 
