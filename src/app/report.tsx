@@ -12,6 +12,7 @@ export default function ReportScreen() {
   const [locationReady, setLocationReady] = useState(false);
   const [locationMessage, setLocationMessage] = useState('Usar mi ubicación actual');
   const [photoAdded, setPhotoAdded] = useState(Boolean(draft.photoUri));
+  const canContinue = Boolean(draft.title?.trim() && draft.description?.trim());
 
   const useCurrentLocation = async () => {
     try {
@@ -67,6 +68,9 @@ export default function ReportScreen() {
       </View>
       <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.eyebrow}>NUEVO REPORTE CIUDADANO</Text>
+        <Text style={styles.pageTitle}>Cuéntanos qué sucede</Text>
+        <Text style={styles.pageDescription}>La ubicación y la evidencia ayudan a que presidencia atienda tu reporte más rápido.</Text>
         <View style={styles.steps}>
           <Step number="1" label="Ubicación" active />
           <View style={styles.stepLine} />
@@ -74,16 +78,18 @@ export default function ReportScreen() {
           <View style={styles.stepLine} />
           <Step number="3" label="Confirmar" />
         </View>
-        <TextInput style={styles.locationInput} value={draft.address || ''} placeholder="Dirección o colonia" onChangeText={(address) => updateDraft({ address })} />
+        <Text style={styles.sectionLabel}>Ubicación <Text style={styles.required}>*</Text></Text>
+        <TextInput style={styles.locationInput} value={draft.address || ''} placeholder="Dirección o colonia" placeholderTextColor="#8a96a8" onChangeText={(address) => updateDraft({ address })} />
         <View style={styles.map}><View style={styles.mapRoadOne} /><View style={styles.mapRoadTwo} /><View style={styles.pin}><Text style={styles.pinText}>●</Text></View></View>
-        <Pressable style={styles.locationButton} onPress={useCurrentLocation}><Text style={styles.locationIcon}>⌖</Text><Text style={styles.locationLabel}>{locationReady ? locationMessage : 'Usar mi ubicación actual'}</Text></Pressable>
-        <Text style={styles.sectionLabel}>Título del reporte</Text>
-        <TextInput style={styles.locationInput} value={draft.title || ''} placeholder="Ej. Falla en alumbrado público" onChangeText={(title) => updateDraft({ title })} />
-        <Text style={styles.sectionLabel}>Selecciona una foto o toma una</Text>
+        <Pressable style={[styles.locationButton, locationReady && styles.locationButtonReady]} onPress={useCurrentLocation}><Text style={styles.locationIcon}>{locationReady ? '✓' : '⌖'}</Text><Text style={[styles.locationLabel, locationReady && styles.locationLabelReady]}>{locationReady ? locationMessage : 'Usar mi ubicación actual'}</Text></Pressable>
+        <Text style={styles.sectionLabel}>Título del reporte <Text style={styles.required}>*</Text></Text>
+        <TextInput style={styles.locationInput} value={draft.title || ''} placeholder="Ej. Falla en alumbrado público" placeholderTextColor="#8a96a8" onChangeText={(title) => updateDraft({ title })} />
+        <View style={styles.labelRow}><Text style={styles.sectionLabel}>Evidencia fotográfica</Text><Text style={styles.optional}>Opcional</Text></View>
         <View style={styles.photoRow}><View style={styles.photo}>{draft.photoUri ? <Image source={{ uri: draft.photoUri }} style={styles.photoImage} /> : <Text style={styles.lamp}>{photoAdded ? '✓' : '☼'}</Text>}</View><View style={styles.photoActions}><Pressable style={styles.addPhoto} onPress={takePhoto}><Text style={styles.camera}>◉</Text><Text style={styles.addPhotoText}>Tomar foto</Text></Pressable><Pressable style={styles.addPhoto} onPress={addPhoto}><Text style={styles.camera}>▣</Text><Text style={styles.addPhotoText}>Galería</Text></Pressable></View></View>
-        <Text style={styles.sectionLabel}>Describe la problemática</Text>
-        <TextInput style={styles.description} multiline value={draft.description || ''} placeholder="Describe qué sucede, desde cuándo y cómo afecta a la comunidad" onChangeText={(description) => updateDraft({ description })} />
-        <Pressable style={styles.nextButton} onPress={continueToAssistant}><Text style={styles.nextLabel}>Siguiente</Text></Pressable>
+        <Text style={styles.sectionLabel}>Describe la problemática <Text style={styles.required}>*</Text></Text>
+        <TextInput style={styles.description} multiline value={draft.description || ''} placeholder="Describe qué sucede, desde cuándo y cómo afecta a la comunidad" placeholderTextColor="#8a96a8" onChangeText={(description) => updateDraft({ description })} />
+        <Text style={styles.helper}>{draft.description?.length || 0}/500 caracteres</Text>
+        <Pressable disabled={!canContinue} style={[styles.nextButton, !canContinue && styles.nextButtonDisabled]} onPress={continueToAssistant}><Text style={styles.nextLabel}>{canContinue ? 'Continuar' : 'Completa los campos obligatorios'}</Text></Pressable>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -102,6 +108,9 @@ const styles = StyleSheet.create({
   headerSpace: { width: 25 },
   content: { paddingHorizontal: 20, paddingTop: 16 },
   keyboard: { flex: 1 },
+  eyebrow: { color: '#55739c', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 6 },
+  pageTitle: { color: '#182744', fontSize: 24, fontWeight: '800', marginBottom: 5 },
+  pageDescription: { color: '#68778e', fontSize: 13, lineHeight: 19, marginBottom: 20 },
   steps: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 },
   step: { alignItems: 'center', width: 60 },
   stepNumber: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#e8edf3', alignItems: 'center', justifyContent: 'center' },
@@ -110,16 +119,21 @@ const styles = StyleSheet.create({
   stepNumberTextActive: { color: '#fff' },
   stepLabel: { color: '#4c5b71', fontSize: 11, fontWeight: '700', marginTop: 6 },
   stepLine: { height: 2, backgroundColor: '#dfe5ec', flex: 1, marginTop: 12 },
-  locationInput: { borderColor: '#d6dce4', borderWidth: 1, borderRadius: 10, height: 44, paddingHorizontal: 13, color: '#52627b', fontSize: 12, fontWeight: '600' },
+  locationInput: { borderColor: '#d6dce4', borderWidth: 1, borderRadius: 10, height: 46, paddingHorizontal: 13, color: '#263b5f', fontSize: 13, fontWeight: '600', backgroundColor: '#fff', marginBottom: 12 },
   map: { height: 118, backgroundColor: '#e8ece7', overflow: 'hidden', position: 'relative' },
   mapRoadOne: { position: 'absolute', width: '150%', height: 27, backgroundColor: '#fff', top: 35, left: -50, transform: [{ rotate: '18deg' }] },
   mapRoadTwo: { position: 'absolute', width: '150%', height: 22, backgroundColor: '#fff', top: 77, left: -30, transform: [{ rotate: '-27deg' }] },
   pin: { position: 'absolute', top: 28, left: '50%', marginLeft: -15, backgroundColor: '#e85f55', borderRadius: 18, width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   pinText: { color: '#fff', fontSize: 15 },
-  locationButton: { height: 42, borderColor: '#d6dce4', borderWidth: 1, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 15 },
+  locationButton: { height: 42, borderColor: '#d6dce4', borderWidth: 1, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 18, backgroundColor: '#f8fafc' },
+  locationButtonReady: { borderColor: '#b8dfc1', backgroundColor: '#effaf1' },
   locationIcon: { color: '#526b91', fontSize: 20 },
   locationLabel: { color: '#263c63', fontSize: 13, fontWeight: '700' },
+  locationLabelReady: { color: '#327046' },
   sectionLabel: { color: '#17191c', fontSize: 14, fontWeight: '800', marginBottom: 8 },
+  required: { color: '#d35b54' },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  optional: { color: '#8a96a8', fontSize: 11, marginBottom: 8 },
   photoRow: { flexDirection: 'row', gap: 10, marginBottom: 17 },
   photoActions: { flex: 1, gap: 8 },
   photo: { width: 130, height: 99, borderRadius: 9, backgroundColor: '#283447', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
@@ -128,7 +142,9 @@ const styles = StyleSheet.create({
   addPhoto: { flex: 1, width: '100%', borderRadius: 9, borderColor: '#cbd3df', borderWidth: 1, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   camera: { color: '#8ca0bd', fontSize: 26 },
   addPhotoText: { color: '#596c89', fontSize: 12, fontWeight: '700', marginTop: 6 },
-  description: { height: 88, borderColor: '#d0d8e3', borderWidth: 1, borderRadius: 10, padding: 12, color: '#52627b', fontSize: 14, textAlignVertical: 'top', marginBottom: 18 },
-  nextButton: { height: 44, borderRadius: 10, backgroundColor: '#243b75', alignItems: 'center', justifyContent: 'center' },
+  description: { height: 112, borderColor: '#d0d8e3', borderWidth: 1, borderRadius: 10, padding: 12, color: '#52627b', fontSize: 14, textAlignVertical: 'top', marginBottom: 4 },
+  helper: { color: '#8a96a8', fontSize: 11, textAlign: 'right', marginBottom: 18 },
+  nextButton: { height: 48, borderRadius: 10, backgroundColor: '#243b75', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  nextButtonDisabled: { backgroundColor: '#b6c0cf' },
   nextLabel: { color: '#fff', fontSize: 13, fontWeight: '800' },
 });
